@@ -1,0 +1,438 @@
+# CLAUDE.md - 前端开发系统规则
+
+> **技术栈**: Bun + Vite + React + Tailwind CSS + Zustand + Biome
+
+---
+
+## 🎯 常用命令
+
+```bash
+bun install          # 安装依赖
+bun dev              # 启动开发服务器
+bun run build        # 生产构建
+bun run check        # Biome 检查 + 格式化
+bun test             # 运行测试
+```
+
+---
+
+## 📁 项目结构
+
+```
+src/
+├── components/          # 通用组件
+│   ├── ui/             # 基础 UI 组件（Button/Input/Modal）
+│   └── common/         # 业务通用组件
+├── features/           # 功能模块（按业务划分）
+│   └── auth/
+│       ├── components/
+│       ├── hooks/
+│       ├── stores/
+│       └── types/
+├── hooks/              # 全局自定义 Hooks
+├── layouts/            # 布局组件
+├── pages/              # 页面组件
+├── services/           # API 服务
+├── stores/             # 全局 Zustand Store
+├── types/              # 全局类型定义
+├── utils/              # 工具函数
+└── constants/          # 常量定义
+```
+
+---
+
+## ⚛️ React 组件规范
+
+### 组件模板
+```tsx
+import { forwardRef } from 'react'
+import { cn } from '@/utils/cn'
+
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary'
+  isLoading?: boolean
+}
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = 'primary', isLoading, children, ...props }, ref) => {
+    return (
+      <button
+        ref={ref}
+        disabled={isLoading}
+        className={cn(
+          'px-4 py-2 rounded-md font-medium transition-colors',
+          variant === 'primary' && 'bg-blue-600 text-white hover:bg-blue-700',
+          variant === 'secondary' && 'bg-gray-200 hover:bg-gray-300',
+          className
+        )}
+        {...props}
+      >
+        {isLoading ? <Spinner /> : children}
+      </button>
+    )
+  }
+)
+```
+
+### 核心规则
+```
+✅ 使用函数组件 + TypeScript
+✅ Props 接口继承原生 HTML 属性
+✅ 使用 forwardRef 暴露 ref
+✅ 使用 cn() 合并类名，支持外部覆盖
+✅ Early return 处理 loading/error/empty 状态
+✅ 事件处理函数命名：handleXxx
+```
+
+---
+
+## 🎨 Tailwind CSS 规范
+
+### cn 工具函数
+```typescript
+// utils/cn.ts
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+```
+
+### 类名顺序
+```
+布局 → 尺寸 → 间距 → 背景 → 边框 → 文字 → 效果 → 响应式 → 状态
+
+示例：
+"flex items-center w-full px-4 bg-white border rounded-lg text-sm shadow-sm md:w-auto hover:bg-gray-50"
+```
+
+### 常用模式
+```tsx
+// 居中容器
+"mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+
+// 卡片
+"rounded-lg border bg-white p-6 shadow-sm"
+
+// 响应式隐藏
+"hidden md:block"  // 移动端隐藏
+"block md:hidden"  // 桌面端隐藏
+```
+
+---
+
+## 🐻 Zustand 状态管理
+
+### Store 模板
+```typescript
+// stores/useUserStore.ts
+import { create } from 'zustand'
+import { devtools, persist } from 'zustand/middleware'
+import { immer } from 'zustand/middleware/immer'
+
+interface UserState {
+  user: User | null
+  isAuthenticated: boolean
+  setUser: (user: User) => void
+  logout: () => void
+}
+
+export const useUserStore = create<UserState>()(
+  devtools(
+    persist(
+      immer((set) => ({
+        user: null,
+        isAuthenticated: false,
+
+        setUser: (user) =>
+          set((state) => {
+            state.user = user
+            state.isAuthenticated = true
+          }),
+
+        logout: () =>
+          set((state) => {
+            state.user = null
+            state.isAuthenticated = false
+          }),
+      })),
+      { name: 'user-storage' }
+    )
+  )
+)
+```
+
+### 使用规则
+```tsx
+// ✅ 使用选择器，避免不必要的重渲染
+const userName = useUserStore((state) => state.user?.name)
+
+// ✅ 多个状态使用 shallow
+import { shallow } from 'zustand/shallow'
+const { user, isLoading } = useUserStore(
+  (state) => ({ user: state.user, isLoading: state.isLoading }),
+  shallow
+)
+
+// ❌ 避免选择整个 store
+const store = useUserStore()
+```
+
+---
+
+## 🌐 API 服务层
+
+### HTTP 客户端
+```typescript
+// services/http.ts
+class HttpClient {
+  private baseUrl = import.meta.env.VITE_API_BASE_URL
+
+  private async request<T>(endpoint: string, config: RequestInit = {}): Promise<T> {
+    const token = useUserStore.getState().token
+
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      ...config,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...config.headers,
+      },
+    })
+
+    if (!response.ok) throw new Error('Request failed')
+    return response.json()
+  }
+
+  get<T>(endpoint: string) {
+    return this.request<T>(endpoint, { method: 'GET' })
+  }
+
+  post<T>(endpoint: string, data?: unknown) {
+    return this.request<T>(endpoint, { method: 'POST', body: JSON.stringify(data) })
+  }
+}
+
+export const http = new HttpClient()
+```
+
+### API 服务模块
+```typescript
+// services/api/user.ts
+export const userService = {
+  getProfile: () => http.get<User>('/user/profile'),
+  updateProfile: (data: UpdateUserDTO) => http.patch<User>('/user/profile', data),
+}
+```
+
+---
+
+## 🔧 自定义 Hooks
+
+### 常用 Hooks
+```typescript
+// hooks/useDebounce.ts
+export function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay)
+    return () => clearTimeout(timer)
+  }, [value, delay])
+
+  return debouncedValue
+}
+
+// hooks/useClickOutside.ts
+export function useClickOutside<T extends HTMLElement>(handler: () => void) {
+  const ref = useRef<T>(null)
+
+  useEffect(() => {
+    const listener = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) handler()
+    }
+    document.addEventListener('mousedown', listener)
+    return () => document.removeEventListener('mousedown', listener)
+  }, [handler])
+
+  return ref
+}
+```
+
+---
+
+## 📝 TypeScript 规范
+
+### 类型定义
+```typescript
+// types/user.ts
+
+// 实体类型
+interface User {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+}
+
+// 枚举用 const 对象
+const UserRole = { Admin: 'admin', User: 'user' } as const
+type UserRole = (typeof UserRole)[keyof typeof UserRole]
+
+// DTO 类型
+interface CreateUserDTO {
+  name: string
+  email: string
+}
+
+// 组件 Props
+interface UserCardProps {
+  user: User
+  onEdit?: (user: User) => void
+  className?: string
+}
+```
+
+---
+
+## ⚙️ 配置文件
+
+### biome.json
+```json
+{
+  "linter": {
+    "rules": {
+      "recommended": true,
+      "correctness": { "noUnusedVariables": "error", "noUnusedImports": "error" },
+      "suspicious": { "noExplicitAny": "warn", "noConsoleLog": "warn" }
+    }
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2
+  },
+  "javascript": {
+    "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" }
+  }
+}
+```
+
+### vite.config.ts
+```typescript
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'node:path'
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: { '@': path.resolve(__dirname, './src') },
+  },
+})
+```
+
+### tsconfig.json (paths)
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"] }
+  }
+}
+```
+
+---
+
+## 🧪 测试规范
+
+### 组件测试
+```typescript
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+
+describe('Button', () => {
+  it('should call onClick when clicked', async () => {
+    const handleClick = vi.fn()
+    render(<Button onClick={handleClick}>Click</Button>)
+    
+    await userEvent.click(screen.getByRole('button'))
+    expect(handleClick).toHaveBeenCalledTimes(1)
+  })
+})
+```
+
+### Store 测试
+```typescript
+describe('useUserStore', () => {
+  beforeEach(() => {
+    useUserStore.setState({ user: null, isAuthenticated: false })
+  })
+
+  it('should set user', () => {
+    useUserStore.getState().setUser({ id: '1', name: 'John' })
+    expect(useUserStore.getState().isAuthenticated).toBe(true)
+  })
+})
+```
+
+---
+
+## 🚀 性能优化
+
+```tsx
+// ✅ React.memo 避免重渲染
+export const UserCard = memo(function UserCard({ user }: Props) {})
+
+// ✅ useMemo 缓存计算
+const sorted = useMemo(() => items.sort(...), [items])
+
+// ✅ useCallback 缓存函数
+const handleSubmit = useCallback((data) => {}, [])
+
+// ✅ 路由懒加载
+const Dashboard = lazy(() => import('@/pages/Dashboard'))
+
+// ✅ 列表使用稳定 key
+{items.map((item) => <Item key={item.id} />)}
+```
+
+---
+
+## 🔒 安全规范
+
+```
+🔴 不硬编码敏感信息，使用环境变量 VITE_XXX
+🔴 用户输入必须验证（推荐 Zod）
+🔴 dangerouslySetInnerHTML 必须用 DOMPurify 消毒
+🔴 外部链接添加 rel="noopener noreferrer"
+🔴 敏感数据不存 localStorage，用 httpOnly cookie
+```
+
+---
+
+## 📋 提交前检查
+
+```
+□ bun run check 通过
+□ bun run build 成功
+□ bun test 通过
+□ 无 console.log 遗留
+□ 组件有完整 TypeScript 类型
+□ 新功能有对应测试
+```
+
+---
+
+## 🎯 命名规范
+
+| 类型 | 规范 | 示例 |
+|------|------|------|
+| 组件文件 | PascalCase | `UserCard.tsx` |
+| Hook 文件 | camelCase + use 前缀 | `useAuth.ts` |
+| 工具函数 | camelCase | `formatDate.ts` |
+| 类型文件 | camelCase | `types.ts` |
+| 常量 | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT` |
+| CSS 类 | kebab-case | `user-card` |
+
+---
