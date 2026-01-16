@@ -4,6 +4,18 @@
 
 ---
 
+## 🚨 强制要求
+
+```
+🔴 React 强制使用 v19 版本，禁止使用 v18 或以下版本
+🔴 Tailwind CSS 强制使用 v4 版本，禁止使用 v3 或以下版本
+🔴 严禁使用 CommonJS 模块系统，必须使用 ESM
+🔴 尽可能使用 TypeScript，仅在构建工具完全不支持时才用 JavaScript（如微信小程序主工程）
+🔴 数据结构必须定义为强类型，使用 any 或未结构化 JSON 前需征求用户同意
+```
+
+---
+
 ## 🎯 常用命令
 
 ```bash
@@ -263,6 +275,15 @@ export function useClickOutside<T extends HTMLElement>(handler: () => void) {
 ---
 
 ## 📝 TypeScript 规范
+
+### 强类型要求
+```
+✅ 所有数据结构必须定义为强类型
+✅ 优先使用 interface 或 type 明确定义结构
+✅ API 响应数据必须有对应的类型定义
+⚠️ 使用 any 或未结构化 JSON 前，必须先征求用户同意
+❌ 禁止随意使用 any 绕过类型检查
+```
 
 ### 类型定义
 ```typescript
