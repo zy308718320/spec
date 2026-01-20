@@ -11,7 +11,7 @@
 🔴 Tailwind CSS 强制使用 v4 版本，禁止使用 v3 或以下版本
 🔴 Biome 强制使用 v2 及以上版本
 🔴 严禁使用 CommonJS 模块系统，必须使用 ESM
-🔴 尽可能使用 TypeScript，仅在构建工具完全不支持时才用 JavaScript（如微信小程序主工程）
+🔴 尽可能使用 TypeScript，仅在构建工具完全不支持时才用 JavaScript
 🔴 数据结构必须定义为强类型，使用 any 或未结构化 JSON 前需征求用户同意
 🔴 UI 组件库优先使用 shadcn/ui，避免引入其他重量级组件库
 🔴 禁止在代码中直接内联 SVG 图标，统一使用开源 Font 图标库（如 Lucide、Phosphor Icons）
