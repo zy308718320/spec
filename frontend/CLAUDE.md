@@ -370,7 +370,8 @@ interface IUserCardProps {
         "noSvgWithoutTitle": "off",
         "useButtonType": "off",
         "useKeyWithClickEvents": "off",
-        "noStaticElementInteractions": "off"
+        "noStaticElementInteractions": "off",
+        "useValidAnchor": "warn"
       },
       "complexity": {
         "noForEach": "off"
