@@ -545,6 +545,6 @@ const Dashboard = lazy(() => import('@/pages/Dashboard'));
 - 像素级对比设计稿
 - 响应式测试（各断点）
 - 可访问性检查（a11y）
-- 使用 Playwright 进行视觉回归测试，必要时再次对比设计稿
+- 使用 chrome-devtools-mcp 进行视觉回归测试，必要时再次对比设计稿
 
 ---
