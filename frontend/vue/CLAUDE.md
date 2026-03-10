@@ -1,6 +1,6 @@
 # CLAUDE.md - 前端开发系统规则 (Vue)
 
-> **技术栈**: Bun + Vite + Vue 3 + TypeScript + Tailwind CSS + Pinia + VueUse + Element Plus
+> **技术栈**: Bun + Vite + Vue 3 + TypeScript + Tailwind CSS + Pinia + VueUse + Ant Design Vue
 
 ---
 
@@ -13,8 +13,8 @@
 🔴 严禁使用 CommonJS 模块系统，必须使用 ESM
 🔴 尽可能使用 TypeScript，仅在构建工具完全不支持时才用 JavaScript
 🔴 数据结构必须定义为强类型，使用 any 或未结构化 JSON 前需征求用户同意
-🔴 UI 组件库优先使用 Element Plus，避免引入其他重量级组件库
-🔴 禁止在代码中直接内联 SVG 图标，统一使用 Element Plus Icons 或开源图标库
+🔴 UI 组件库优先使用 Ant Design Vue，避免引入其他重量级组件库
+🔴 禁止在代码中直接内联 SVG 图标，统一使用 Ant Design Vue Icons (@ant-design/icons-vue) 或开源图标库
 ```
 
 ---
@@ -621,7 +621,7 @@ export default defineConfig({
     "paths": {
       "@/*": ["src/*"]
     },
-    "types": ["vite/client", "element-plus/global"]
+    "types": ["vite/client"]
   }
 }
 ```
@@ -799,41 +799,41 @@ const largeData = shallowRef<LargeObject>({ ... });
 
 ---
 
-## 🎯 Element Plus 使用规范
+## 🎯 Ant Design Vue 使用规范
 
 ### 组件引入
 
 ```typescript
 // main.ts - 全局引入（大型项目）
-import ElementPlus from 'element-plus';
-import 'element-plus/dist/index.css';
-app.use(ElementPlus);
+import Antd from 'ant-design-vue';
+import 'ant-design-vue/dist/reset.css';
+app.use(Antd);
 
 // 按需引入（推荐）
-import { ElButton, ElInput } from 'element-plus';
+import { Button, Input } from 'ant-design-vue';
 ```
 
 ### 类型使用
 
 ```vue
 <script setup lang="ts">
-import type { FormInstance, FormRules } from 'element-plus';
+import type { Rule } from 'ant-design-vue/es/form';
+import { message } from 'ant-design-vue';
 
-const formRef = ref<FormInstance>();
-const rules: FormRules = {
+const rules: Record<string, Rule[]> = {
   name: [
     { required: true, message: '请输入名称', trigger: 'blur' },
     { min: 3, max: 5, message: '长度在 3 到 5 个字符', trigger: 'blur' },
   ],
 };
 
-const submitForm = async (formEl: FormInstance | undefined) => {
-  if (!formEl) return;
-  await formEl.validate((valid) => {
-    if (valid) {
-      console.log('submit!');
-    }
-  });
+const submitForm = async () => {
+  try {
+    await formRef.value.validate();
+    message.success('提交成功！');
+  } catch (error) {
+    message.error('表单验证失败');
+  }
 };
 </script>
 ```

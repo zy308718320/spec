@@ -56,10 +56,9 @@
 ### 🔴 硬性指标（必须遵守）
 
 #### 文件行数限制
-| 语言类型 | 最大行数 | 适用语言 |
-|----------|----------|----------|
-| 动态语言 | 300 行 | Python, JavaScript, TypeScript |
-| 静态语言 | 400 行 | Java, Go, Rust, C++ |
+```
+超过 1000 行的文件必须拆分
+```
 
 #### 目录结构限制
 ```
@@ -71,7 +70,7 @@
 | 类型 | 风格 | 示例 |
 |------|------|------|
 | 变量/函数 | camelCase | `userName` |
-| 类/类型 | PascalCase | `UserService`, `HttpClient` |
+| 类 | PascalCase | `UserService`, `HttpClient` |
 | 常量 | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT` |
 | 私有成员 | 前缀下划线 | `_privateMethod` |
 | 布尔值 | is/has/can/should 前缀 | `isValid`, `hasPermission` |
@@ -160,13 +159,6 @@
 ---
 
 ## 🔧 运行与调试规范
-
-### 脚本化管理（强制）
-```
-🔴 所有 Run & Debug 操作必须使用 scripts/ 目录下的 .sh 脚本
-🔴 永远不要直接使用 npm、pnpm、uv、python 等命令
-🔴 脚本执行失败时，先修复问题，仍坚持用脚本启停
-```
 
 ### 必备配置
 ```

@@ -265,7 +265,7 @@ export interface ApiResponse<T> {
     }
   },
   "formatter": { "indentStyle": "space", "indentWidth": 2 },
-  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } }
+  "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "always" } }
 }
 ```
 
